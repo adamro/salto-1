@@ -53,6 +53,7 @@ const writeLogo = (outStream: WriteStream): void => {
 // }
 
 const onNoArgs = (program: commander.Command, outStream: WriteStream): void => {
+  outStream.write('HEREEEEE')
   if (outStream.isTTY) {
     writeLogo(outStream)
   }
@@ -64,10 +65,6 @@ const onNoArgs = (program: commander.Command, outStream: WriteStream): void => {
   outStream.write(EOL)
 }
 
-// type AugmentedYargsParser = Argv & {
-//   errors: string[]
-// }
-
 const createCommanderProgram = ():
   commander.Command => {
     const program = new commander.Command('salto')
@@ -75,81 +72,7 @@ const createCommanderProgram = ():
     return program
 }
 
-
-// const createYargsParser = (outStream: WriteStream, errStream: WriteStream):
-//   AugmentedYargsParser => {
-//   const errors: string[] = []
-
-//   const parser = yargs()
-//     .strict()
-//     .version(`${versionString}\n`)
-//     .scriptName('salto')
-//     .completion('completion', false as unknown as string)
-//     .exitProcess(false)
-//     .help(false)
-//     .fail((msg, err) => {
-//       if (err) throw err
-//       errors.push(msg)
-//     })
-
-//   // Define the help option explicitly to have better control of when the help message is printed
-//   parser.option('help', {
-//     alias: 'h',
-//     boolean: true,
-//     describe: 'Show help',
-//   })
-
-//   parser.option('verbose', {
-//     alias: 'v',
-//     boolean: true,
-//     describe: 'Output extra logs',
-//   })
-
-//   // Update texts and define un-wanted yargs messages
-//   parser.updateLocale({
-//     'Not enough non-option arguments: got %s, need at least %s': DO_NOT_SHOW,
-//     'Too many non-option arguments: got %s, maximum of %s': DO_NOT_SHOW,
-//     'Positionals:': 'Arguments:',
-//   })
-
-
-//   if (streams.hasColors(outStream)) {
-//     yargonaut.helpStyle('bold')
-//       .style('yellow', 'required')
-//   }
-
-//   if (streams.hasColors(errStream)) {
-//     yargonaut.errorsStyle(ERROR_STYLE)
-//   }
-
-//   parser.wrap(Math.min(MAX_WIDTH, parser.terminalWidth()))
-
-//   Object.defineProperty(parser, 'errors', { get: () => errors })
-
-//   return parser as AugmentedYargsParser
-// }
-
-// const handleErrors = (parser: Argv, outStream: WriteStream, errors: string[]): void => {
-//   let printedErrors = false
-//   errors.forEach((value: string) => {
-//     // Workaround to not show error messages we do not want
-//     if (value && value.length > 0 && !value.includes(DO_NOT_SHOW)) {
-//       outStream.write(value)
-//       outStream.write(EOL)
-//       if (!printedErrors) printedErrors = true
-//     }
-//   })
-
-//   if (printedErrors) outStream.write(EOL)
-//   showHelpMessage(parser, outStream)
-// }
-
-// export type GlobalArgs = Arguments<{
-//   verbose: boolean
-// }>
-
 export type ParseResult =
-  // { status: 'command'; parsedArgs: GlobalArgs; builder: CommandBuilder } |
   { status: 'command'; parsedArgs: CommanderRawArgs, builder: CommandBuilder} |
   { status: 'error' } |
   { status: 'help' } |
@@ -165,14 +88,13 @@ const parse = (
   const commandSelected = registerBuilders(program, commandBuilders)
   try {
     await program.parseAsync(args, { from: 'user' })
-    stdout.write('Am I getting here?')
-    // Handle empty args (spaces)
     if (_.isEmpty(program.rawArgs)) {
       stdout.write('EMPTY EMPTY ME+TLTYFDSFDS')
       onNoArgs(program, stderr)
       resolve({ status: 'error' })
       return
     }
+    // Handle empty args (spaces)
     setTimeout(() => {
       if (commandSelected.done) {
         commandSelected.then(builder => resolve({
@@ -188,48 +110,6 @@ const parse = (
     resolve({ status: 'error'})
     reject(error)
   }
-  // parser.parse(args, {}, (err, parsedArgs, outText) => {
-  //   if (err) {
-  //     reject(err)
-  //     return
-  //   }
-
-  //   // When the help option is on show message and resolve (alone or with other args/options)
-  //   if (parsedArgs.help) {
-  //     showHelpMessage(parser, stdout)
-  //     resolve({ status: 'help' })
-  //     return
-  //   }
-
-  //   stdout.write(outText)
-
-  //   if (parsedArgs.version) {
-  //     resolve({ status: 'empty' })
-  //     return
-  //   }
-
-  //   if (parsedArgs._.filter(a => a).length === 0) {
-      // onNoArgs(parser, stderr)
-      // resolve({ status: 'error' })
-      // return
-  //   }
-
-  //   // let the event loop process the commandSelected promise
-  //   setTimeout(() => {
-  //     if (parser.errors.length > 0) {
-  //       handleErrors(parser, stderr, parser.errors)
-  //       resolve({ status: 'error' })
-  //     } else if (commandSelected.done) {
-  //       commandSelected.then(builder => resolve({
-  //         status: 'command',
-  //         parsedArgs: parsedArgs as GlobalArgs,
-  //         builder,
-  //       }))
-  //     } else { // "completion"
-  //       resolve({ status: 'empty' })
-  //     }
-  //   }, 0)
-  // })
 })
 
 export default parse

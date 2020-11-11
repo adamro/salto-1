@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 import yargs from 'yargs'
+// import commander from 'commander'
 import { ParsedCliInput, CliOutput, CliCommand, SpinnerCreator } from './types'
 import { Filter } from './filter'
 
@@ -33,25 +34,32 @@ export interface CommanderCommandOpts {
 
   subCommands?: SubCommands
 
-  options?: { 
-    [key: string]: {
-      name: string
-      alias?: string
-      description?: string
-    }
-  }
+  options?: CKeyedOptions
 
-  positionals?: { 
-    [key: string]: {
-      name: string
-      alias?: string
-      description?: string
-    }
-  }
+  positionals?: CPositionalOptions
 }
 
 export interface SubCommands { [key: string ]: Omit<CommanderCommandOpts, 'name'> }
 
+export interface CPositionalOption {
+  name: string
+  required?: boolean
+  array?: boolean
+  description?: string
+  alias?: string
+}
+
+export interface CPositionalOptions { [key: string]: CPositionalOption }
+
+export interface CKeyedOption {
+  name: string
+  alias?: string
+  description?: string
+  boolean?: boolean
+  required?: boolean
+}
+
+export interface CKeyedOptions { [key: string]: CKeyedOption }
 export interface KeyedOptions { [key: string]: yargs.Options }
 export interface PositionalOptions { [key: string]: yargs.PositionalOptions }
 

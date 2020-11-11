@@ -17,24 +17,33 @@
 import commander from 'commander'
 import { promises } from '@salto-io/lowerdash'
 import builders from './commands/index'
-import { CommandBuilder, CommanderCommandBuilder } from './command_builder'
+import { CommandBuilder, CommanderCommandBuilder, CPositionalOption } from './command_builder'
 import { makeArray } from '@salto-io/lowerdash/dist/src/collections/array'
 
 const { promiseWithState } = promises.state
 
 const createOptionString = (name: string, alias?: string): string =>
-  alias === undefined ? name : `-${alias}, ${name}`
+  alias === undefined ? name : `-${alias}, --${name}`
+
+const commandStr = (name: string, positionals: CPositionalOption[]): string =>
+  (`${name} ${positionals.map(positional => positional.required ? `<${positional.name}>` : `[${positional.name}]`).join(' ')}`)
 
 // TODO: Handle aliases + requiredOptions + types of options
 const registerBuilder = (
   commanderProgram: commander.Command, { options, build }: CommanderCommandBuilder
   ): Promise<CommandBuilder> =>
     new Promise<CommandBuilder>(resolved => {
-      const command = new commander.Command(options.command)
+      const command = new commander.Command()
+        .command(commandStr(options.command, makeArray(Object.values(options.positionals ?? {}))))
 
       command
         .description(options.description)
       
+      makeArray(Object.values(options?.positionals ?? {})).forEach(positional => {
+        command
+          .requiredOption(positional.name, positional.description)
+      })
+
       makeArray(Object.values(options?.options ?? {})).forEach(option => {
         command
           .option(createOptionString(option.name, option.alias), option.description)
@@ -43,20 +52,7 @@ const registerBuilder = (
       commanderProgram.addCommand(command)
     })
 
-// const registerBuilderOld = (
-//   yargsParser: yargs.Argv, { yargsModule, build }: YargsCommandBuilder
-// ): Promise<CommandBuilder> =>
-//   new Promise<CommandBuilder>(resolved => yargsParser.command({
-//     ...yargsModule,
-//     handler: () => resolved(build),
-//   }))
-
 export const registerBuilders = (
   commanderProgram: commander.Command, allBuilders: CommanderCommandBuilder[] = builders
 ): promises.state.PromiseWithState<CommandBuilder> =>
   promiseWithState(Promise.race(allBuilders.map(builder => registerBuilder(commanderProgram, builder))))
-
-// export const registerBuildersOld = (
-//   parser: yargs.Argv, allBuilders: YargsCommandBuilder[] = builders
-// ): promises.state.PromiseWithState<CommandBuilder> =>
-//   promiseWithState(Promise.race(allBuilders.map(builder => registerBuilder(parser, builder))))

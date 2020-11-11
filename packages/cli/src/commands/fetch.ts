@@ -303,6 +303,13 @@ const fetchBuilder = {
   options: {
     command: 'fetch',
     description: 'Syncs this workspace with the services\' current state',
+    positionals: {
+      try: {
+        name: 'try',
+        description: 'try desc',
+        required: true,
+      },
+    },
     options: {
       force: {
         name: 'force',
