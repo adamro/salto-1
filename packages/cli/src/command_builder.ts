@@ -21,8 +21,36 @@ export type CommandBuilder<
   TArgs = {},
   TParsedCliInput extends ParsedCliInput<TArgs> = ParsedCliInput<TArgs>,
   > =
-  // Create a CliCommand given a parsed CLI input (output of yargs parser) and output interface
+  // Create a CliCommand given a parsed CLI input (output of parser) and output interface
   (input: TParsedCliInput, output: CliOutput, spinner: SpinnerCreator) => Promise<CliCommand>
+
+export interface CommanderCommandOpts {
+  command: string
+
+  aliases?: string[]
+
+  description: string
+
+  subCommands?: SubCommands
+
+  options?: { 
+    [key: string]: {
+      name: string
+      alias?: string
+      description?: string
+    }
+  }
+
+  positionals?: { 
+    [key: string]: {
+      name: string
+      alias?: string
+      description?: string
+    }
+  }
+}
+
+export interface SubCommands { [key: string ]: Omit<CommanderCommandOpts, 'name'> }
 
 export interface KeyedOptions { [key: string]: yargs.Options }
 export interface PositionalOptions { [key: string]: yargs.PositionalOptions }
@@ -44,6 +72,15 @@ export interface YargsModuleOpts {
 
   // Keyed arguments
   keyed?: KeyedOptions
+}
+
+export interface CommanderCommandBuilder {
+  options: CommanderCommandOpts,
+  build: (
+    input: ParsedCliInput,
+    output: CliOutput,
+    spinnerCreator: SpinnerCreator
+  ) => Promise<CliCommand>, 
 }
 
 export interface YargsCommandBuilder<

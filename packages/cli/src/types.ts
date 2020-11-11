@@ -15,7 +15,7 @@
 */
 import { streams } from '@salto-io/lowerdash'
 import { Telemetry, Tags, CommandConfig } from '@salto-io/core'
-import yargs from 'yargs'
+// import yargs from 'yargs'
 
 export type WriteStream = streams.MaybeTty & {
   write(s: string): void
@@ -66,8 +66,16 @@ export interface CliInput {
 }
 
 // CliInput transformed after yargs did its work - args is replaced
+// export interface ParsedCliInput<TParsedArgs = {}> extends Omit<CliInput, 'args'> {
+//   args: yargs.Arguments<TParsedArgs>
+// }
+
+export type CommanderRawArgs<TParsedArgs = {}> = TParsedArgs & {
+  [key: string]: unknown
+}
+
 export interface ParsedCliInput<TParsedArgs = {}> extends Omit<CliInput, 'args'> {
-  args: yargs.Arguments<TParsedArgs>
+  args: CommanderRawArgs<TParsedArgs>
 }
 
 export interface CliCommand {

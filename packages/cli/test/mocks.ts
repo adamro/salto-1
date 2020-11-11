@@ -29,7 +29,7 @@ import { Workspace, errors as wsErrors } from '@salto-io/workspace'
 import * as workspace from '../src/workspace/workspace'
 import realCli from '../src/cli'
 import builders from '../src/commands/index'
-import { YargsCommandBuilder } from '../src/command_builder'
+import { CommanderCommandBuilder } from '../src/command_builder'
 import { Spinner, SpinnerCreator, CliOutput } from '../src/types'
 
 export const mockFunction = <T extends (...args: never[]) => unknown>():
@@ -112,7 +112,7 @@ export const cli = async ({
   out = {},
   err = {},
 }: {
-  commandBuilders?: YargsCommandBuilder[]
+  commandBuilders?: CommanderCommandBuilder[]
   args?: string[] | string
   out?: MockWriteStreamOpts
   err?: MockWriteStreamOpts

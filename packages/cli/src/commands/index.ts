@@ -13,27 +13,30 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { YargsCommandBuilder } from '../command_builder'
+import { CommanderCommandBuilder } from '../command_builder'
 import fetchBuilder from './fetch'
-import deployBuilder from './deploy'
-import initBuilder from './init'
-import servicesBuilder from './service'
-import envsBuilder from './env'
-import restoreBuilder from './restore'
-import elementBuilder from './element'
-import diffBuilder from './diff'
-import cleanBuilder from './clean'
+// import deployBuilder from './deploy'
+// import initBuilder from './init'
+// import servicesBuilder from './service'
+// import envsBuilder from './env'
+// import restoreBuilder from './restore'
+// import elementBuilder from './element'
+// import diffBuilder from './diff'
+// import cleanBuilder from './clean'
 
+export default [
+  fetchBuilder,
+] as unknown as CommanderCommandBuilder[]
 
 // The order of the builders determines order of appearance in help text
-export default [
-  initBuilder,
-  fetchBuilder,
-  deployBuilder,
-  restoreBuilder,
-  servicesBuilder,
-  envsBuilder,
-  elementBuilder,
-  diffBuilder,
-  cleanBuilder,
-] as YargsCommandBuilder[]
+// export default [
+  // initBuilder,
+  // fetchBuilder,
+  // deployBuilder,
+  // restoreBuilder,
+  // servicesBuilder,
+  // envsBuilder,
+  // elementBuilder,
+  // diffBuilder,
+  // cleanBuilder,
+// ] as CommanderCommandBuilder[]

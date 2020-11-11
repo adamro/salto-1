@@ -18,7 +18,7 @@ import chalk from 'chalk'
 import { compareLogLevels, LogLevel, logger } from '@salto-io/logging'
 import { streams } from '@salto-io/lowerdash'
 import { CliInput, CliOutput, CliExitCode, SpinnerCreator } from './types'
-import { YargsCommandBuilder } from './command_builder'
+import { CommanderCommandBuilder } from './command_builder'
 import parse, { ERROR_STYLE } from './argparser'
 import { versionString } from './version'
 
@@ -42,7 +42,7 @@ export default async (
   { input, output, commandBuilders, spinnerCreator }: {
     input: CliInput
     output: CliOutput
-    commandBuilders: YargsCommandBuilder[]
+    commandBuilders: CommanderCommandBuilder[]
     spinnerCreator: SpinnerCreator
   }
 ): Promise<CliExitCode> => {
@@ -50,6 +50,7 @@ export default async (
   const cmdStr = ['salto', ...cmdLineArgs].join(' ')
   const startTime = new Date()
   try {
+    // const parseResult = await parse(commandBuilders, input, output)
     const parseResult = await parse(commandBuilders, input, output)
 
     if (parseResult.status === 'error') {

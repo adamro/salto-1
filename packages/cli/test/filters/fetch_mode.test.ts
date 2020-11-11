@@ -13,34 +13,34 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { createCommandBuilder, YargsCommandBuilder } from '../../src/command_builder'
+import { CommanderCommandBuilder } from '../../src/command_builder'
 import { CliExitCode } from '../../src/types'
 import { MockCliOutput, cli } from '../mocks'
-import { fetchModeFilter } from '../../src/filters/fetch_mode'
+// import { fetchModeFilter } from '../../src/filters/fetch_mode'
 
 describe('fetch mode filter', () => {
   let out: MockCliOutput
   let buildFunc: jest.Mock
-  let builder: YargsCommandBuilder
+  let builder: CommanderCommandBuilder
 
   beforeEach(async () => {
     buildFunc = jest.fn(() =>
       Promise.resolve({ execute: () => Promise.resolve(CliExitCode.Success) }))
 
-    builder = createCommandBuilder({
+    builder = {
       options: {
         command: 'testCommand',
         aliases: ['t'],
         description: 'tests the command parser',
       },
-      filters: [fetchModeFilter],
+      // filters: [fetchModeFilter],
       build: buildFunc,
-    })
+    }
   })
 
   const runCli = (args: string): Promise<MockCliOutput> =>
     cli({
-      commandBuilders: [builder] as YargsCommandBuilder[],
+      commandBuilders: [builder] as CommanderCommandBuilder[],
       args,
     })
 
