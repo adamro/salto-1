@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { CommanderCommandBuilder } from '../../src/command_builder'
+import { CommandOrGroupDef } from '../../src/command_builder'
 import { CliExitCode } from '../../src/types'
 import { MockCliOutput, cli, mockLoadWorkspace } from '../mocks'
 // import { environmentFilter } from '../../src/filters/env'
@@ -25,7 +25,7 @@ jest.mock('@salto-io/core', () => ({
 describe('environment filter', () => {
   let out: MockCliOutput
   let buildFunc: jest.Mock
-  let builder: CommanderCommandBuilder
+  let builder: CommandOrGroupDef
 
   beforeEach(async () => {
     buildFunc = jest.fn(() =>
@@ -33,7 +33,7 @@ describe('environment filter', () => {
 
     builder = {
       options: {
-        command: 'testCommand',
+        name: 'testCommand',
         aliases: ['t'],
         // aliases: ['t'],
         description: 'tests the command parser',
@@ -51,7 +51,7 @@ describe('environment filter', () => {
 
   const runCli = (args: string): Promise<MockCliOutput> =>
     cli({
-      commandBuilders: [builder] as CommanderCommandBuilder[],
+      commandBuilders: [builder] as CommandOrGroupDef[],
       args,
     })
 

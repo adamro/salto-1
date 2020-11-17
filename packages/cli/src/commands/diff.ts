@@ -13,170 +13,170 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { diff, LocalChange, loadLocalWorkspace } from '@salto-io/core'
-import { logger } from '@salto-io/logging'
-import { EOL } from 'os'
-import _ from 'lodash'
-import { ServicesArgs, servicesFilter } from '../filters/service'
-import { EnvironmentArgs } from './env'
-import { ParsedCliInput, CliOutput, CliExitCode, CliCommand, CliTelemetry } from '../types'
-import { createCommandBuilder } from '../command_builder'
-import { getCliTelemetry } from '../telemetry'
-import { getWorkspaceTelemetryTags } from '../workspace/workspace'
-import Prompts from '../prompts'
-import { formatDetailedChanges, formatInvalidFilters, formatStepStart, formatStepCompleted, header } from '../formatter'
-import { outputLine, errorOutputLine } from '../outputer'
-import { createRegexFilters } from '../convertors'
+// import { diff, LocalChange, loadLocalWorkspace } from '@salto-io/core'
+// import { logger } from '@salto-io/logging'
+// import { EOL } from 'os'
+// import _ from 'lodash'
+// import { ServicesArgs, servicesFilter } from '../filters/service'
+// import { EnvironmentArgs } from './env'
+// import { ParsedCliInput, CliOutput, CliExitCode, CliCommand, CliTelemetry } from '../types'
+// import { createCommandBuilder } from '../command_builder'
+// import { getCliTelemetry } from '../telemetry'
+// import { getWorkspaceTelemetryTags } from '../workspace/workspace'
+// import Prompts from '../prompts'
+// import { formatDetailedChanges, formatInvalidFilters, formatStepStart, formatStepCompleted, header } from '../formatter'
+// import { outputLine, errorOutputLine } from '../outputer'
+// import { createRegexFilters } from '../convertors'
 
-const log = logger(module)
+// const log = logger(module)
 
-type DiffArgs = {
-    detailedPlan: boolean
-    elementSelector: string[]
-    hidden: boolean
-    state: boolean
-    fromEnv: string
-    toEnv: string
-  } & ServicesArgs & EnvironmentArgs
+// type DiffArgs = {
+//     detailedPlan: boolean
+//     elementSelector: string[]
+//     hidden: boolean
+//     state: boolean
+//     fromEnv: string
+//     toEnv: string
+//   } & ServicesArgs & EnvironmentArgs
 
-type DiffParsedCliInput = ParsedCliInput<DiffArgs>
+// type DiffParsedCliInput = ParsedCliInput<DiffArgs>
 
-// TODO - move to formatter.ts
+// // TODO - move to formatter.ts
 
-const printDiff = (
-  changes: LocalChange[],
-  detailed: boolean,
-  toEnv: string,
-  fromEnv: string,
-  output: CliOutput
-): void => {
-  outputLine(EOL, output)
-  outputLine(header(Prompts.DIFF_CALC_DIFF_RESULT_HEADER(toEnv, fromEnv)), output)
-  if (changes.length > 0) {
-    outputLine(
-      formatDetailedChanges([changes.map(change => change.change)], detailed),
-      output,
-    )
-  } else {
-    outputLine('No changes', output)
-  }
-  outputLine(EOL, output)
-}
-export const command = (
-  workspaceDir: string,
-  detailedPlan: boolean,
-  cliTelemetry: CliTelemetry,
-  output: CliOutput,
-  fromEnv: string,
-  toEnv: string,
-  inputHidden = false,
-  inputState = false,
-  inputServices?: string[],
-  elmSelectors: string[] = []
-): CliCommand => ({
-  async execute(): Promise<CliExitCode> {
-    log.debug(`running diff command on '${workspaceDir}', detailedPlan=${detailedPlan}
-        , services=${inputServices}, fromEnv=${fromEnv}, toEnv=${toEnv}
-        , inputHidden=${inputHidden}, inputState=${inputState}, elmSelectors=${elmSelectors}`)
+// const printDiff = (
+//   changes: LocalChange[],
+//   detailed: boolean,
+//   toEnv: string,
+//   fromEnv: string,
+//   output: CliOutput
+// ): void => {
+//   outputLine(EOL, output)
+//   outputLine(header(Prompts.DIFF_CALC_DIFF_RESULT_HEADER(toEnv, fromEnv)), output)
+//   if (changes.length > 0) {
+//     outputLine(
+//       formatDetailedChanges([changes.map(change => change.change)], detailed),
+//       output,
+//     )
+//   } else {
+//     outputLine('No changes', output)
+//   }
+//   outputLine(EOL, output)
+// }
+// export const command = (
+//   workspaceDir: string,
+//   detailedPlan: boolean,
+//   cliTelemetry: CliTelemetry,
+//   output: CliOutput,
+//   fromEnv: string,
+//   toEnv: string,
+//   inputHidden = false,
+//   inputState = false,
+//   inputServices?: string[],
+//   elmSelectors: string[] = []
+// ): CliCommand => ({
+//   async execute(): Promise<CliExitCode> {
+//     log.debug(`running diff command on '${workspaceDir}', detailedPlan=${detailedPlan}
+//         , services=${inputServices}, fromEnv=${fromEnv}, toEnv=${toEnv}
+//         , inputHidden=${inputHidden}, inputState=${inputState}, elmSelectors=${elmSelectors}`)
 
-    const { filters, invalidFilters } = createRegexFilters(elmSelectors)
-    if (!_.isEmpty(invalidFilters)) {
-      errorOutputLine(formatInvalidFilters(invalidFilters), output)
-      return CliExitCode.UserInputError
-    }
+//     const { filters, invalidFilters } = createRegexFilters(elmSelectors)
+//     if (!_.isEmpty(invalidFilters)) {
+//       errorOutputLine(formatInvalidFilters(invalidFilters), output)
+//       return CliExitCode.UserInputError
+//     }
 
-    const workspace = await loadLocalWorkspace('.')
-    const workspaceTags = await getWorkspaceTelemetryTags(workspace)
-    if (!(workspace.envs().includes(fromEnv))) {
-      errorOutputLine(`Unknown environment ${fromEnv}`, output)
-      return CliExitCode.UserInputError
-    }
-    if (!(workspace.envs().includes(toEnv))) {
-      errorOutputLine(`Unknown environment ${toEnv}`, output)
-      return CliExitCode.UserInputError
-    }
-    cliTelemetry.start(workspaceTags)
-    outputLine(EOL, output)
-    outputLine(formatStepStart(Prompts.DIFF_CALC_DIFF_START(toEnv, fromEnv)), output)
+//     const workspace = await loadLocalWorkspace('.')
+//     const workspaceTags = await getWorkspaceTelemetryTags(workspace)
+//     if (!(workspace.envs().includes(fromEnv))) {
+//       errorOutputLine(`Unknown environment ${fromEnv}`, output)
+//       return CliExitCode.UserInputError
+//     }
+//     if (!(workspace.envs().includes(toEnv))) {
+//       errorOutputLine(`Unknown environment ${toEnv}`, output)
+//       return CliExitCode.UserInputError
+//     }
+//     cliTelemetry.start(workspaceTags)
+//     outputLine(EOL, output)
+//     outputLine(formatStepStart(Prompts.DIFF_CALC_DIFF_START(toEnv, fromEnv)), output)
 
-    const changes = await diff(
-      workspace,
-      fromEnv,
-      toEnv,
-      inputHidden,
-      inputState,
-      inputServices,
-      filters
-    )
-    printDiff(changes, detailedPlan, toEnv, fromEnv, output)
+//     const changes = await diff(
+//       workspace,
+//       fromEnv,
+//       toEnv,
+//       inputHidden,
+//       inputState,
+//       inputServices,
+//       filters
+//     )
+//     printDiff(changes, detailedPlan, toEnv, fromEnv, output)
 
-    outputLine(formatStepCompleted(Prompts.DIFF_CALC_DIFF_FINISH(toEnv, fromEnv)), output)
-    outputLine(EOL, output)
-    cliTelemetry.success(workspaceTags)
+//     outputLine(formatStepCompleted(Prompts.DIFF_CALC_DIFF_FINISH(toEnv, fromEnv)), output)
+//     outputLine(EOL, output)
+//     cliTelemetry.success(workspaceTags)
 
-    return CliExitCode.Success
-  },
-})
+//     return CliExitCode.Success
+//   },
+// })
 
-const diffBuilder = createCommandBuilder({
-  options: {
-    command: 'diff <from-env> <to-env> [element-selector..]',
-    description: 'Compare two workspace environments',
-    positional: {
-      'from-env': {
-        type: 'string',
-        desc: 'The environment that serves as a baseline for the comparison',
-      },
-      'to-env': {
-        type: 'string',
-        desc: 'The environment that is compared to the baseline provided by from-env',
-      },
-      'element-selector': {
-        description: 'Array of configuration element patterns',
-      },
-    },
-    keyed: {
-      'detailed-plan': {
-        alias: ['p'],
-        describe: 'Print detailed changes between envs',
-        boolean: true,
-        default: false,
-        demandOption: false,
-      },
-      hidden: {
-        describe: 'Display changes in hidden values',
-        boolean: true,
-        default: false,
-        demandOption: false,
-      },
-      state: {
-        describe: 'Use the latest state files to compare the environments.',
-        boolean: true,
-        default: false,
-        demandOption: false,
-      },
-    },
-  },
+// const diffBuilder = createCommandBuilder({
+//   options: {
+//     command: 'diff <from-env> <to-env> [element-selector..]',
+//     description: 'Compare two workspace environments',
+//     positional: {
+//       'from-env': {
+//         type: 'string',
+//         desc: 'The environment that serves as a baseline for the comparison',
+//       },
+//       'to-env': {
+//         type: 'string',
+//         desc: 'The environment that is compared to the baseline provided by from-env',
+//       },
+//       'element-selector': {
+//         description: 'Array of configuration element patterns',
+//       },
+//     },
+//     keyed: {
+//       'detailed-plan': {
+//         alias: ['p'],
+//         describe: 'Print detailed changes between envs',
+//         boolean: true,
+//         default: false,
+//         demandOption: false,
+//       },
+//       hidden: {
+//         describe: 'Display changes in hidden values',
+//         boolean: true,
+//         default: false,
+//         demandOption: false,
+//       },
+//       state: {
+//         describe: 'Use the latest state files to compare the environments.',
+//         boolean: true,
+//         default: false,
+//         demandOption: false,
+//       },
+//     },
+//   },
 
-  filters: [servicesFilter],
+//   filters: [servicesFilter],
 
-  async build(
-    input: DiffParsedCliInput,
-    output: CliOutput,
-  ): Promise<CliCommand> {
-    return command(
-      '.',
-      input.args.detailedPlan,
-      getCliTelemetry(input.telemetry, 'diff'),
-      output,
-      input.args.fromEnv,
-      input.args.toEnv,
-      input.args.hidden,
-      input.args.state,
-      input.args.services,
-      input.args.elementSelector
-    )
-  },
-})
+//   async build(
+//     input: DiffParsedCliInput,
+//     output: CliOutput,
+//   ): Promise<CliCommand> {
+//     return command(
+//       '.',
+//       input.args.detailedPlan,
+//       getCliTelemetry(input.telemetry, 'diff'),
+//       output,
+//       input.args.fromEnv,
+//       input.args.toEnv,
+//       input.args.hidden,
+//       input.args.state,
+//       input.args.services,
+//       input.args.elementSelector
+//     )
+//   },
+// })
 
-export default diffBuilder
+// export default diffBuilder

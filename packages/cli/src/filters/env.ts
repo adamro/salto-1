@@ -13,39 +13,39 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import yargs from 'yargs'
+// import yargs from 'yargs'
 
-import { loadLocalWorkspace } from '@salto-io/core'
-import { ParsedCliInput } from '../types'
-import { ParserFilter, ParsedCliInputFilter } from '../filter'
-import { EnvironmentArgs, EnvironmentParsedCliInput } from '../commands/env'
+// import { loadLocalWorkspace } from '@salto-io/core'
+// import { ParsedCliInput } from '../types'
+// import { ParserFilter, ParsedCliInputFilter } from '../filter'
+// import { EnvironmentArgs, EnvironmentParsedCliInput } from '../commands/env'
 
-type EnvironmentFilter = ParserFilter<EnvironmentArgs>
-  & ParsedCliInputFilter<EnvironmentArgs, EnvironmentParsedCliInput>
+// type EnvironmentFilter = ParserFilter<EnvironmentArgs>
+//   & ParsedCliInputFilter<EnvironmentArgs, EnvironmentParsedCliInput>
 
-export const environmentFilter: EnvironmentFilter = {
-  transformParser(parser: yargs.Argv): yargs.Argv<EnvironmentArgs> {
-    return parser
-      .options({
-        env: {
-          alias: ['e'],
-          describe: 'The name of the environment to use',
-          type: 'string',
-          string: true,
-          demandOption: false,
-        },
-      }) as yargs.Argv<EnvironmentArgs>
-  },
+// export const environmentFilter: EnvironmentFilter = {
+//   transformParser(parser: yargs.Argv): yargs.Argv<EnvironmentArgs> {
+//     return parser
+//       .options({
+//         env: {
+//           alias: ['e'],
+//           describe: 'The name of the environment to use',
+//           type: 'string',
+//           string: true,
+//           demandOption: false,
+//         },
+//       }) as yargs.Argv<EnvironmentArgs>
+//   },
 
-  async transformParsedCliInput(
-    input: ParsedCliInput<EnvironmentArgs>
-  ): Promise<ParsedCliInput<EnvironmentArgs>> {
-    const args = input.args as yargs.Arguments<EnvironmentArgs>
-    const workspace = await loadLocalWorkspace('.')
+//   async transformParsedCliInput(
+//     input: ParsedCliInput<EnvironmentArgs>
+//   ): Promise<ParsedCliInput<EnvironmentArgs>> {
+//     const args = input.args as yargs.Arguments<EnvironmentArgs>
+//     const workspace = await loadLocalWorkspace('.')
 
-    if (args.env && !(workspace.envs().includes(args.env))) {
-      throw new Error(`Environment ${args.env} isn't configured. Use salto env create.`)
-    }
-    return input
-  },
-}
+//     if (args.env && !(workspace.envs().includes(args.env))) {
+//       throw new Error(`Environment ${args.env} isn't configured. Use salto env create.`)
+//     }
+//     return input
+//   },
+// }

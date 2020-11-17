@@ -85,8 +85,13 @@ describe('fetch command', () => {
           config: { services },
         } as unknown as Workspace
         mockLoadWorkspace.mockResolvedValueOnce({ workspace: erroredWorkspace, errored: true })
-        result = await command('', true, false, mockTelemetry, cliOutput, spinnerCreator, 'default', true, services)
-          .execute()
+        result = await command('', true, false, 'default', services)
+          .execute(
+            mockTelemetry,
+            { shouldCalcTotalSize: true },
+            cliOutput,
+            spinnerCreator
+          )
       })
 
       it('should fail', async () => {
@@ -109,13 +114,14 @@ describe('fetch command', () => {
         result = await command(
           workspaceName,
           true, false,
+          'default',
+          services,
+        ).execute(
           mockTelemetry,
+          { shouldCalcTotalSize: true },
           cliOutput,
           spinnerCreator,
-          'default',
-          true,
-          services,
-        ).execute()
+        )
       })
 
       it('should return success code', () => {
@@ -702,13 +708,14 @@ describe('fetch command', () => {
       await command(
         workspaceDir,
         false, false,
+        'default',
+        services,
+      ).execute(
         mockTelemetry,
+        { shouldCalcTotalSize: true },
         cliOutput,
         spinnerCreator,
-        'default',
-        true,
-        services,
-      ).execute()
+      )
 
       expect(callbacks.getChangeToAlignAction).toHaveBeenCalledTimes(1)
       expect(fetchCmd.fetchCommand).toHaveBeenCalledTimes(1)
@@ -721,13 +728,14 @@ describe('fetch command', () => {
       await command(
         workspaceDir,
         false, false,
+        'override',
+        services,
+      ).execute(
         mockTelemetry,
+        { shouldCalcTotalSize: true },
         cliOutput,
         spinnerCreator,
-        'override',
-        true,
-        services,
-      ).execute()
+      )
 
       expect(callbacks.getChangeToAlignAction).toHaveBeenCalledTimes(1)
       expect(fetchCmd.fetchCommand).toHaveBeenCalledTimes(1)
@@ -740,13 +748,14 @@ describe('fetch command', () => {
       await command(
         workspaceDir,
         false, false,
+        'default',
+        services,
+      ).execute(
         mockTelemetry,
+        { shouldCalcTotalSize: true },
         cliOutput,
         spinnerCreator,
-        'default',
-        true,
-        services,
-      ).execute()
+      )
 
       expect(callbacks.getChangeToAlignAction).toHaveBeenCalledTimes(1)
       expect(fetchCmd.fetchCommand).not.toHaveBeenCalled()
@@ -758,13 +767,14 @@ describe('fetch command', () => {
       await command(
         workspaceDir,
         true, false,
+        'override',
+        services,
+      ).execute(
         mockTelemetry,
+        { shouldCalcTotalSize: true },
         cliOutput,
         spinnerCreator,
-        'override',
-        true,
-        services,
-      ).execute()
+      )
 
       expect(callbacks.getChangeToAlignAction).not.toHaveBeenCalled()
       expect(fetchCmd.fetchCommand).toHaveBeenCalledTimes(1)
@@ -782,13 +792,14 @@ describe('fetch command', () => {
       await command(
         workspaceDir,
         false, false,
+        'default',
+        services,
+      ).execute(
         mockTelemetry,
+        { shouldCalcTotalSize: true },
         cliOutput,
         spinnerCreator,
-        'default',
-        true,
-        services,
-      ).execute()
+      )
 
       expect(callbacks.getChangeToAlignAction).not.toHaveBeenCalled()
       expect(fetchCmd.fetchCommand).toHaveBeenCalledTimes(1)
@@ -801,13 +812,14 @@ describe('fetch command', () => {
       await command(
         workspaceDir,
         false, false,
+        'align',
+        services,
+      ).execute(
         mockTelemetry,
+        { shouldCalcTotalSize: true },
         cliOutput,
         spinnerCreator,
-        'align',
-        true,
-        services,
-      ).execute()
+      )
 
       expect(callbacks.getChangeToAlignAction).not.toHaveBeenCalled()
       expect(fetchCmd.fetchCommand).toHaveBeenCalledTimes(1)
@@ -824,14 +836,16 @@ describe('fetch command', () => {
       })
       await command(
         workspaceDir,
-        false, false,
+        false,
+        false,
+        'default',
+        services,
+      ).execute(
         mockTelemetry,
+        { shouldCalcTotalSize: true },
         cliOutput,
         spinnerCreator,
-        'default',
-        true,
-        services,
-      ).execute()
+      )
 
       expect(callbacks.getChangeToAlignAction).not.toHaveBeenCalled()
       expect(fetchCmd.fetchCommand).toHaveBeenCalledTimes(1)
@@ -853,12 +867,13 @@ describe('fetch command', () => {
       await command(
         workspaceDir,
         false, false,
+        'override',
+      ).execute(
         mockTelemetry,
+        { shouldCalcTotalSize: true },
         cliOutput,
         spinnerCreator,
-        'override',
-        true,
-      ).execute()
+      )
 
       expect(callbacks.getChangeToAlignAction).not.toHaveBeenCalled()
       expect(fetchCmd.fetchCommand).toHaveBeenCalledTimes(1)
@@ -877,13 +892,14 @@ describe('fetch command', () => {
       await command(
         workspaceDir,
         true, false,
+        'default',
+        services,
+      ).execute(
         mockTelemetry,
+        { shouldCalcTotalSize: true },
         cliOutput,
         spinnerCreator,
-        'default',
-        true,
-        services,
-      ).execute()
+      )
       expect(mockLoadWorkspace).toHaveBeenCalledTimes(1)
       expect(mockLoadWorkspace.mock.results[0].value.workspace.currentEnv()).toEqual(
         mocks.withoutEnvironmentParam
@@ -892,15 +908,17 @@ describe('fetch command', () => {
     it('should use provided env', async () => {
       await command(
         workspaceDir,
-        true, false,
-        mockTelemetry,
-        cliOutput,
-        spinnerCreator,
-        'default',
         true,
+        false,
+        'default',
         services,
         mocks.withEnvironmentParam,
-      ).execute()
+      ).execute(
+        mockTelemetry,
+        { shouldCalcTotalSize: true },
+        cliOutput,
+        spinnerCreator,
+      )
       expect(mockLoadWorkspace).toHaveBeenCalledTimes(1)
       expect(mockLoadWorkspace.mock.results[0].value.workspace.currentEnv()).toEqual(
         mocks.withEnvironmentParam

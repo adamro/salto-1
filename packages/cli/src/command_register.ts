@@ -13,46 +13,91 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-// import yargs from 'yargs'
+import _ from 'lodash'
 import commander from 'commander'
 import { promises } from '@salto-io/lowerdash'
 import builders from './commands/index'
-import { CommandBuilder, CommanderCommandBuilder, CPositionalOption } from './command_builder'
+import { PositionalOption, CommandOrGroupDef, isCommand, CommandDef, CommandsGroupDef } from './command_builder'
 import { makeArray } from '@salto-io/lowerdash/dist/src/collections/array'
+import { CliCommand } from './types'
 
 const { promiseWithState } = promises.state
 
 const createOptionString = (name: string, alias?: string): string =>
   alias === undefined ? name : `-${alias}, --${name}`
 
-const commandStr = (name: string, positionals: CPositionalOption[]): string =>
-  (`${name} ${positionals.map(positional => positional.required ? `<${positional.name}>` : `[${positional.name}]`).join(' ')}`)
+const commandStr = (name: string, positionals?: PositionalOption[]): string =>
+  (`${name} ${makeArray(positionals).map(positional => positional.required ? `<${positional.name}>` : `[${positional.name}]`).join(' ')}`)
 
 // TODO: Handle aliases + requiredOptions + types of options
-const registerBuilder = (
-  commanderProgram: commander.Command, { options, build }: CommanderCommandBuilder
-  ): Promise<CommandBuilder> =>
-    new Promise<CommandBuilder>(resolved => {
-      const command = new commander.Command()
-        .command(commandStr(options.command, makeArray(Object.values(options.positionals ?? {}))))
-
+const registerCommand = (
+  resolved: (val: CliCommand | PromiseLike<CliCommand> | undefined) => void,
+  parentCommand: commander.Command,
+  commandDef: CommandDef
+): void => {
+  const { options, build } = commandDef
+  const command = new commander.Command()
+    .passCommandToAction(false)
+    .command(commandStr(options.name, makeArray(Object.values(options.positionals ?? {}))))
+  command
+    .description(options.description)
+  makeArray(Object.values(options?.positionals ?? {})).forEach(positional => {
+    if (positional.required) {
       command
-        .description(options.description)
-      
-      makeArray(Object.values(options?.positionals ?? {})).forEach(positional => {
-        command
-          .requiredOption(positional.name, positional.description)
-      })
+        .requiredOption(positional.name, positional.description, positional.default)
+    } else {
+      command
+        .option(positional.name, positional.description, positional.default)
+    }
+  })
+  makeArray(Object.values(options?.options ?? {})).forEach(option => {
+    command
+      .option(createOptionString(option.name, option.alias), option.description, option.default)
+  })
+  command.action(
+    (...options) => {
+    console.log('%o', options)
+    // TODO: Add the positionals
+    const a = {
+      ...options.pop(),
+    }
+    return resolved(build(a))
+  })
+  parentCommand.addCommand(command)
+}
 
-      makeArray(Object.values(options?.options ?? {})).forEach(option => {
-        command
-          .option(createOptionString(option.name, option.alias), option.description)
-      })
-      command.action(() => resolved(build))
-      commanderProgram.addCommand(command)
-    })
+const registerGroup = (
+  resolved: (val: CliCommand | PromiseLike<CliCommand> | undefined) => void,
+  parentCommand: commander.Command,
+  containerDef: CommandsGroupDef
+): void => {
+  const { options, subCommands } = containerDef
+  const groupCommand = new commander.Command()
+    // TODO: Add the command names as positionals
+    .command(commandStr(options.name))
+  subCommands.forEach(subCommand => {
+    registerCommandOrGroup(resolved, groupCommand, subCommand)
+  })
+  parentCommand.addCommand(groupCommand)
+}
+
+const registerCommandOrGroup = (
+  resolved: (val: CliCommand | PromiseLike<CliCommand> | undefined) => void,
+  parentCommand: commander.Command,
+  commandOrGroupDef: CommandOrGroupDef
+): void => {
+  if (isCommand(commandOrGroupDef)) {
+    registerCommand(resolved, parentCommand, commandOrGroupDef)
+  } else {
+    registerGroup(resolved, parentCommand, commandOrGroupDef)
+  }
+}
+
+const buildCliCommand = 
+  (mainCommand: commander.Command,  commandDefinition: CommandOrGroupDef): Promise<CliCommand> => 
+    new Promise<CliCommand>(resolved => (registerCommandOrGroup(resolved, mainCommand, commandDefinition)))
 
 export const registerBuilders = (
-  commanderProgram: commander.Command, allBuilders: CommanderCommandBuilder[] = builders
-): promises.state.PromiseWithState<CommandBuilder> =>
-  promiseWithState(Promise.race(allBuilders.map(builder => registerBuilder(commanderProgram, builder))))
+  commanderProgram: commander.Command, allBuilders: CommandOrGroupDef[] = builders
+): promises.state.PromiseWithState<CliCommand> =>
+  promiseWithState(Promise.race(allBuilders.map(builder => buildCliCommand(commanderProgram, builder))))

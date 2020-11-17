@@ -21,8 +21,8 @@ import commander from 'commander'
 // import { Arguments } from 'yargs'
 // import { streams } from '@salto-io/lowerdash'
 // import chalk from 'chalk'
-import { CommanderRawArgs, WriteStream } from './types'
-import { CommandBuilder, CommanderCommandBuilder } from './command_builder'
+import { WriteStream, CliCommand } from './types'
+import { CommandOrGroupDef } from './command_builder'
 import { registerBuilders } from './command_register'
 import { versionString } from './version'
 import * as fonts from './fonts'
@@ -69,17 +69,18 @@ const createCommanderProgram = ():
   commander.Command => {
     const program = new commander.Command('salto')
       .version(`${versionString}\n`)
+      .passCommandToAction(false)
     return program
 }
 
 export type ParseResult =
-  { status: 'command'; parsedArgs: CommanderRawArgs, builder: CommandBuilder} |
+  { status: 'command'; command: CliCommand} |
   { status: 'error' } |
   { status: 'help' } |
   { status: 'empty' }
 
 const parse = (
-  commandBuilders: CommanderCommandBuilder[],
+  commandBuilders: CommandOrGroupDef[],
   { args }: { args: string[] },
   { stdout, stderr }: { stdout: WriteStream; stderr: WriteStream },
 ): Promise<ParseResult> => new Promise<ParseResult>(async (resolve, reject) => {
@@ -97,15 +98,15 @@ const parse = (
     // Handle empty args (spaces)
     setTimeout(() => {
       if (commandSelected.done) {
-        commandSelected.then(builder => resolve({
+        commandSelected.then(command => resolve({
           status: 'command',
-          parsedArgs: program.rawArgs as CommanderRawArgs,
-          builder,
+          command,
         }))
       }
     }, 0)
   } catch (error) {
     stderr.write('here?')
+    stderr.write(error)
     // Need to see if this makes sense
     resolve({ status: 'error'})
     reject(error)

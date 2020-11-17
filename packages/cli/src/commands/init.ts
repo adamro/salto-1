@@ -13,69 +13,69 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import * as path from 'path'
-import { initLocalWorkspace } from '@salto-io/core'
-import { outputLine, errorOutputLine } from '../outputer'
-import Prompts from '../prompts'
-import { createCommandBuilder } from '../command_builder'
-import { ParsedCliInput, CliCommand, CliOutput, CliExitCode, CliTelemetry } from '../types'
-import { getEnvName } from '../callbacks'
-import { getWorkspaceTelemetryTags } from '../workspace/workspace'
-import { getCliTelemetry } from '../telemetry'
+// import * as path from 'path'
+// import { initLocalWorkspace } from '@salto-io/core'
+// import { outputLine, errorOutputLine } from '../outputer'
+// import Prompts from '../prompts'
+// import { createCommandBuilder } from '../command_builder'
+// import { ParsedCliInput, CliCommand, CliOutput, CliExitCode, CliTelemetry } from '../types'
+// import { getEnvName } from '../callbacks'
+// import { getWorkspaceTelemetryTags } from '../workspace/workspace'
+// import { getCliTelemetry } from '../telemetry'
 
 
-export const command = (
-  workspaceName: string | undefined,
-  cliTelemetry: CliTelemetry,
-  output: CliOutput,
-  getEnvNameCallback: (currentEnvName?: string) => Promise<string>
-): CliCommand => ({
-  async execute(): Promise<CliExitCode> {
-    cliTelemetry.start()
-    try {
-      const defaultEnvName = await getEnvNameCallback()
-      const baseDir = path.resolve('.')
-      const workspace = await initLocalWorkspace(baseDir, workspaceName, defaultEnvName)
-      const workspaceTags = await getWorkspaceTelemetryTags(workspace)
-      cliTelemetry.success(workspaceTags)
-      outputLine(Prompts.initCompleted(workspace.name, baseDir), output)
-    } catch (e) {
-      errorOutputLine(Prompts.initFailed(e.message), output)
-      cliTelemetry.failure()
-      cliTelemetry.stacktrace(e)
-      return CliExitCode.AppError
-    }
-    return CliExitCode.Success
-  },
-})
+// export const command = (
+//   workspaceName: string | undefined,
+//   cliTelemetry: CliTelemetry,
+//   output: CliOutput,
+//   getEnvNameCallback: (currentEnvName?: string) => Promise<string>
+// ): CliCommand => ({
+//   async execute(): Promise<CliExitCode> {
+//     cliTelemetry.start()
+//     try {
+//       const defaultEnvName = await getEnvNameCallback()
+//       const baseDir = path.resolve('.')
+//       const workspace = await initLocalWorkspace(baseDir, workspaceName, defaultEnvName)
+//       const workspaceTags = await getWorkspaceTelemetryTags(workspace)
+//       cliTelemetry.success(workspaceTags)
+//       outputLine(Prompts.initCompleted(workspace.name, baseDir), output)
+//     } catch (e) {
+//       errorOutputLine(Prompts.initFailed(e.message), output)
+//       cliTelemetry.failure()
+//       cliTelemetry.stacktrace(e)
+//       return CliExitCode.AppError
+//     }
+//     return CliExitCode.Success
+//   },
+// })
 
-type InitArgs = {
-  'workspace-name': string
-}
+// type InitArgs = {
+//   'workspace-name': string
+// }
 
-type InitParsedCliInput = ParsedCliInput<InitArgs>
+// type InitParsedCliInput = ParsedCliInput<InitArgs>
 
-const initBuilder = createCommandBuilder({
-  options: {
-    command: 'init [workspace-name]',
-    description: 'Creates a new Salto workspace in the current directory',
-    positional: {
-      'workspace-name': {
-        type: 'string',
-        description: 'The name of the workspace',
-        default: undefined, // Prevent "default: []" in the help
-      },
-    },
-  },
+// const initBuilder = createCommandBuilder({
+//   options: {
+//     command: 'init [workspace-name]',
+//     description: 'Creates a new Salto workspace in the current directory',
+//     positional: {
+//       'workspace-name': {
+//         type: 'string',
+//         description: 'The name of the workspace',
+//         default: undefined, // Prevent "default: []" in the help
+//       },
+//     },
+//   },
 
-  async build(input: InitParsedCliInput, output: CliOutput) {
-    return command(
-      input.args['workspace-name'],
-      getCliTelemetry(input.telemetry, 'init'),
-      output,
-      getEnvName,
-    )
-  },
-})
+//   async build(input: InitParsedCliInput, output: CliOutput) {
+//     return command(
+//       input.args['workspace-name'],
+//       getCliTelemetry(input.telemetry, 'init'),
+//       output,
+//       getEnvName,
+//     )
+//   },
+// })
 
-export default initBuilder
+// export default initBuilder

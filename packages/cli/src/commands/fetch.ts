@@ -16,15 +16,7 @@
 import _ from 'lodash'
 import wu from 'wu'
 import { getChangeElement, isInstanceElement } from '@salto-io/adapter-api'
-import {
-  fetch as apiFetch,
-  FetchFunc,
-  FetchChange,
-  FetchProgressEvents,
-  StepEmitter,
-  Telemetry,
-  PlanItem,
-} from '@salto-io/core'
+import { fetch as apiFetch, FetchFunc, FetchChange, FetchProgressEvents, StepEmitter, Telemetry, PlanItem, CommandConfig } from '@salto-io/core'
 import { Workspace, nacl, StateRecency } from '@salto-io/workspace'
 import { promises } from '@salto-io/lowerdash'
 import { EventEmitter } from 'pietile-eventemitter'
@@ -34,8 +26,8 @@ import { progressOutputer, outputLine, errorOutputLine } from '../outputer'
 // import { environmentFilter } from '../filters/env'
 // import { createCommandBuilder } from '../command_builder'
 import {
-  ParsedCliInput, CliCommand, CliOutput,
-  CliExitCode, SpinnerCreator, CliTelemetry,
+  CliCommand, CliOutput,
+  CliExitCode, SpinnerCreator, CliTelemetry, CommanderArgs,
 } from '../types'
 import {
   formatChangesSummary, formatMergeErrors, formatFatalFetchError, formatFetchHeader,
@@ -50,9 +42,9 @@ import {
   loadWorkspace, getWorkspaceTelemetryTags, updateStateOnly, applyChangesToWorkspace,
 } from '../workspace/workspace'
 import Prompts from '../prompts'
-import { ServicesArgs } from '../filters/service'
+// import { ServicesArgs } from '../filters/service'
 import { getCliTelemetry } from '../telemetry'
-import { EnvironmentArgs } from './env'
+// import { EnvironmentArgs } from './env'
 
 const log = logger(module)
 const { series } = promises.array
@@ -236,23 +228,35 @@ const shouldRecommendAlignMode = async (
   )
 }
 
+export const commandblah = (): CliCommand => (
+  {
+    async execute(): Promise<CliExitCode> {
+      return CliExitCode.AppError
+    }
+  }
+)
+
 export const command = (
   workspaceDir: string,
   force: boolean,
   interactive: boolean,
-  telemetry: Telemetry,
-  output: CliOutput,
-  spinnerCreator: SpinnerCreator,
   mode: nacl.RoutingMode,
-  shouldCalcTotalSize: boolean,
   inputServices?: string[],
   inputEnvironment?: string,
   stateOnly = false,
 ): CliCommand => ({
-  async execute(): Promise<CliExitCode> {
+  async execute(
+    telemetry: Telemetry,
+    config: CommandConfig,
+    output: CliOutput,
+    spinnerCreator: SpinnerCreator
+  ): Promise<CliExitCode> {
+    output.stdout.write(`GOT HERE`)
+    console.log(`running fetch command on '${workspaceDir}' [force=${force}, interactive=${
+      interactive}, mode=${mode}], environment=${inputEnvironment}, services=${inputServices}`)
     log.debug(`running fetch command on '${workspaceDir}' [force=${force}, interactive=${
       interactive}, mode=${mode}], environment=${inputEnvironment}, services=${inputServices}`)
-
+    const { shouldCalcTotalSize } = config
     const cliTelemetry = getCliTelemetry(telemetry, 'fetch')
     const { workspace, errored, stateRecencies } = await loadWorkspace(workspaceDir, output,
       { force, printStateRecency: true, spinnerCreator, sessionEnv: inputEnvironment })
@@ -296,20 +300,17 @@ type FetchArgs = {
   force: boolean
   interactive: boolean
   stateOnly: boolean
-} & FetchModeArgs & ServicesArgs & EnvironmentArgs
-type FetchParsedCliInput = ParsedCliInput<FetchArgs>
+  // TODO: Remove this
+  services: string[]
+  env: string
+} & FetchModeArgs 
+// & ServicesArgs & EnvironmentArgs
+type FetchParsedCliInput = CommanderArgs<FetchArgs>
 
 const fetchBuilder = {
   options: {
-    command: 'fetch',
+    name: 'fetch',
     description: 'Syncs this workspace with the services\' current state',
-    positionals: {
-      try: {
-        name: 'try',
-        description: 'try desc',
-        required: true,
-      },
-    },
     options: {
       force: {
         name: 'force',
@@ -329,19 +330,15 @@ const fetchBuilder = {
     }
   },
 
-  async build(input: FetchParsedCliInput, output: CliOutput, spinnerCreator: SpinnerCreator) {
+  async build(input: FetchParsedCliInput, _output: CliOutput, _spinnerCreator: SpinnerCreator) {
     return command(
       '.',
-      input.args.force,
-      input.args.interactive,
-      input.telemetry,
-      output,
-      spinnerCreator,
-      input.args.mode,
-      input.config.shouldCalcTotalSize,
-      input.args.services,
-      input.args.env,
-      input.args.stateOnly,
+      input.force,
+      input.interactive,
+      input.mode,
+      input.services,
+      input.env,
+      input.stateOnly,
     )
   },
 }

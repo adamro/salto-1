@@ -15,10 +15,10 @@
 */
 import { EOL } from 'os'
 import chalk from 'chalk'
-import { compareLogLevels, LogLevel, logger } from '@salto-io/logging'
+import { LogLevel, logger } from '@salto-io/logging'
 import { streams } from '@salto-io/lowerdash'
 import { CliInput, CliOutput, CliExitCode, SpinnerCreator } from './types'
-import { CommanderCommandBuilder } from './command_builder'
+import { CommandOrGroupDef } from './command_builder'
 import parse, { ERROR_STYLE } from './argparser'
 import { versionString } from './version'
 
@@ -28,21 +28,21 @@ const EVENTS_FLUSH_WAIT_TIME = 1000
 const log = logger(module)
 const exceptionEvent = 'workspace.error'
 
-const increaseLoggingLogLevel = (): void => {
-  const currentLogLevel = logger.config.minLevel
-  const isCurrentLogLevelLower = currentLogLevel === 'none'
-    || compareLogLevels(currentLogLevel, VERBOSE_LOG_LEVEL) < 0
+// const increaseLoggingLogLevel = (): void => {
+//   const currentLogLevel = logger.config.minLevel
+//   const isCurrentLogLevelLower = currentLogLevel === 'none'
+//     || compareLogLevels(currentLogLevel, VERBOSE_LOG_LEVEL) < 0
 
-  if (isCurrentLogLevelLower) {
-    logger.setMinLevel(VERBOSE_LOG_LEVEL)
-  }
-}
+//   if (isCurrentLogLevelLower) {
+//     logger.setMinLevel(VERBOSE_LOG_LEVEL)
+//   }
+// }
 
 export default async (
   { input, output, commandBuilders, spinnerCreator }: {
     input: CliInput
     output: CliOutput
-    commandBuilders: CommanderCommandBuilder[]
+    commandBuilders: CommandOrGroupDef[]
     spinnerCreator: SpinnerCreator
   }
 ): Promise<CliExitCode> => {
@@ -58,11 +58,12 @@ export default async (
     }
 
     if (parseResult.status === 'command') {
-      const { parsedArgs, builder: commandBuilder } = parseResult
+      const { command } = parseResult
 
-      if (parsedArgs.verbose) {
-        increaseLoggingLogLevel()
-      }
+      // TODO: Check if can do .on for verbose here
+      // if (parsedArgs.verbose) {
+      //   increaseLoggingLogLevel()
+      // }
 
       log.info('CLI started. Version: %s, Node exec location: %s, '
               + 'Salto exec location: %s, Current dir: %s',
@@ -72,9 +73,9 @@ export default async (
       process.cwd())
       log.info('running "%s"', cmdStr)
 
-      const parsedInput = { ...input, args: parsedArgs }
-      const command = await commandBuilder(parsedInput, output, spinnerCreator)
-      return await command.execute()
+      // const parsedInput = { ...input, args: parsedArgs }
+      // const command = await commandBuilder(parsedInput, output, spinnerCreator)
+      return await command.execute(input.telemetry, input.config, output, spinnerCreator)
     }
 
     return CliExitCode.Success

@@ -65,21 +65,21 @@ export interface CliInput {
   // fs abstractions
 }
 
-// CliInput transformed after yargs did its work - args is replaced
-// export interface ParsedCliInput<TParsedArgs = {}> extends Omit<CliInput, 'args'> {
-//   args: yargs.Arguments<TParsedArgs>
-// }
-
-export type CommanderRawArgs<TParsedArgs = {}> = TParsedArgs & {
+export type CommanderArgs<TParsedArgs = {}> = TParsedArgs & {
   [key: string]: unknown
 }
 
 export interface ParsedCliInput<TParsedArgs = {}> extends Omit<CliInput, 'args'> {
-  args: CommanderRawArgs<TParsedArgs>
+  args: CommanderArgs<TParsedArgs>
 }
 
 export interface CliCommand {
-  execute(): Promise<CliExitCode>
+  execute(
+    telemetry?: Telemetry,
+    config?: CommandConfig,
+    output?: CliOutput,
+    spinnerCreator?: SpinnerCreator,
+  ): Promise<CliExitCode>
 }
 
 export type TelemetryEventNames = {

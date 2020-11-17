@@ -13,130 +13,64 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import yargs from 'yargs'
 // import commander from 'commander'
-import { ParsedCliInput, CliOutput, CliCommand, SpinnerCreator } from './types'
-import { Filter } from './filter'
+import { ParsedCliInput, CliCommand } from './types'
+// import { Filter } from './filter'
 
 export type CommandBuilder<
   TArgs = {},
   TParsedCliInput extends ParsedCliInput<TArgs> = ParsedCliInput<TArgs>,
   > =
-  // Create a CliCommand given a parsed CLI input (output of parser) and output interface
-  (input: TParsedCliInput, output: CliOutput, spinner: SpinnerCreator) => Promise<CliCommand>
+  // Create a CliCommand given a parsed CLI input (output of parser)
+  (input: TParsedCliInput) => Promise<CliCommand>
 
-export interface CommanderCommandOpts {
-  command: string
+export type CommandOrGroupDef = CommandsGroupDef | CommandDef
 
-  aliases?: string[]
-
-  description: string
-
-  subCommands?: SubCommands
-
-  options?: CKeyedOptions
-
-  positionals?: CPositionalOptions
+export interface CommandsGroupDef {
+  options: BasicCommandOptions
+  subCommands: CommandOrGroupDef[]
 }
 
-export interface SubCommands { [key: string ]: Omit<CommanderCommandOpts, 'name'> }
+export interface CommandDef {
+  options: CommandOptions
+  build: (
+    input: ParsedCliInput,
+  ) => Promise<CliCommand>, 
+}
 
-export interface CPositionalOption {
+export const isCommand = (c: any): c is CommandDef =>
+  (c !== undefined && c.build !== undefined)
+
+export interface BasicCommandOptions {
+  name: string
+  description: string
+  aliases?: string[]
+}
+
+export interface CommandOptions extends BasicCommandOptions {
+  options?: KeyedOptions
+  positionals?: PositionalOptions
+}
+
+export interface PositionalOption {
   name: string
   required?: boolean
   array?: boolean
   description?: string
   alias?: string
+  default?: string | boolean
 }
 
-export interface CPositionalOptions { [key: string]: CPositionalOption }
+export interface PositionalOptions { [key: string]: PositionalOption }
 
-export interface CKeyedOption {
+export interface KeyedOption {
   name: string
   alias?: string
   description?: string
   boolean?: boolean
   required?: boolean
+  default?: string | boolean
 }
 
-export interface CKeyedOptions { [key: string]: CKeyedOption }
-export interface KeyedOptions { [key: string]: yargs.Options }
-export interface PositionalOptions { [key: string]: yargs.PositionalOptions }
+export interface KeyedOptions { [key: string]: KeyedOption }
 
-export interface YargsModuleOpts {
-  // Name of this command in the CLI, e.g., 'deploy'
-  // If positional arguments are included, they also need to be specified here
-  // See: https://github.com/yargs/yargs/blob/master/docs/advanced.md#positional-arguments
-  command: string
-
-  // Additional or shorthand names, e.g, 'a'
-  aliases?: string[]
-
-  // Description to be shown in help
-  description: string
-
-  // Positional arguments
-  positional?: PositionalOptions
-
-  // Keyed arguments
-  keyed?: KeyedOptions
-}
-
-export interface CommanderCommandBuilder {
-  options: CommanderCommandOpts,
-  build: (
-    input: ParsedCliInput,
-    output: CliOutput,
-    spinnerCreator: SpinnerCreator
-  ) => Promise<CliCommand>, 
-}
-
-export interface YargsCommandBuilder<
-  TArgs = {},
-  TParsedCliInput extends ParsedCliInput<TArgs> = ParsedCliInput<TArgs>,
-  > {
-  // Yargs CommandModule for this command
-  // See https://github.com/yargs/yargs/blob/master/docs/advanced.md#providing-a-command-module
-  yargsModule: Omit<yargs.CommandModule, 'handler'>
-
-  // Creates the actual command
-  build: CommandBuilder<TArgs, TParsedCliInput>
-}
-
-export const createCommandBuilder = <
-  TArgs = {},
-  TParsedCliInput extends ParsedCliInput<TArgs> = ParsedCliInput<TArgs>,
->(
-    { options, filters = [], build }:
-    {
-      options: YargsModuleOpts
-      filters?: Filter[]
-      build: CommandBuilder<TArgs, TParsedCliInput>
-    }): YargsCommandBuilder<TArgs, TParsedCliInput> => ({
-
-    yargsModule: {
-      command: options.command,
-      aliases: options.aliases,
-      describe: options.description,
-      builder: (parser: yargs.Argv) => {
-        // deploy positional arguments
-        Object.entries(options.positional || {})
-          .reduce((res, [key, opt]) => res.positional(key, opt), parser)
-
-        // apply keyed arguments
-        parser.options(options.keyed || {})
-        parser.version(false)
-
-        // apply filters
-        return Filter.applyParser(filters, parser)
-      },
-    },
-    async build(
-      input: TParsedCliInput,
-      output: CliOutput,
-      spinnerCreator: SpinnerCreator
-    ): Promise<CliCommand> {
-      const transformedInput = await Filter.applyParsedCliInput(filters, input) as TParsedCliInput
-      return build(transformedInput, output, spinnerCreator)
-    },
-  })

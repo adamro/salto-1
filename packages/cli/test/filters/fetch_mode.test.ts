@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import { CommanderCommandBuilder } from '../../src/command_builder'
+import { CommandOrGroupDef } from '../../src/command_builder'
 import { CliExitCode } from '../../src/types'
 import { MockCliOutput, cli } from '../mocks'
 // import { fetchModeFilter } from '../../src/filters/fetch_mode'
@@ -21,7 +21,7 @@ import { MockCliOutput, cli } from '../mocks'
 describe('fetch mode filter', () => {
   let out: MockCliOutput
   let buildFunc: jest.Mock
-  let builder: CommanderCommandBuilder
+  let builder: CommandOrGroupDef
 
   beforeEach(async () => {
     buildFunc = jest.fn(() =>
@@ -29,7 +29,7 @@ describe('fetch mode filter', () => {
 
     builder = {
       options: {
-        command: 'testCommand',
+        name: 'testCommand',
         aliases: ['t'],
         description: 'tests the command parser',
       },
@@ -40,7 +40,7 @@ describe('fetch mode filter', () => {
 
   const runCli = (args: string): Promise<MockCliOutput> =>
     cli({
-      commandBuilders: [builder] as CommanderCommandBuilder[],
+      commandBuilders: [builder] as CommandOrGroupDef[],
       args,
     })
 
