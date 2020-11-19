@@ -13,77 +13,77 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-import yargs from 'yargs'
-import { nacl } from '@salto-io/workspace'
-import { ParserFilter, ParsedCliInputFilter } from '../filter'
-import { ParsedCliInput } from '../types'
+// import yargs from 'yargs'
+// import { nacl } from '@salto-io/workspace'
+// import { ParserFilter, ParsedCliInputFilter } from '../filter'
+// import { ParsedCliInput } from '../types'
 
-export type FetchModeArgs = {
-    isolated: boolean
-    override: boolean
-    align: boolean
-    mode: nacl.RoutingMode
-}
+// export type FetchModeArgs = {
+//     isolated: boolean
+//     override: boolean
+//     align: boolean
+//     mode: nacl.RoutingMode
+// }
 
-export type FetchModeCliInput = ParsedCliInput<FetchModeArgs>
+// export type FetchModeCliInput = ParsedCliInput<FetchModeArgs>
 
-type FetchModeFilter = ParserFilter<FetchModeArgs>
-  & ParsedCliInputFilter<FetchModeArgs, FetchModeCliInput>
+// type FetchModeFilter = ParserFilter<FetchModeArgs>
+//   & ParsedCliInputFilter<FetchModeArgs, FetchModeCliInput>
 
-const getUpdateMode = (
-  inputIsolated: boolean,
-  inputOverride: boolean,
-  inputAlign: boolean,
-): nacl.RoutingMode => {
-  if ([inputIsolated, inputOverride, inputAlign].filter(i => i).length > 1) {
-    throw new Error('Can only provide one fetch mode flag.')
-  }
-  if (inputIsolated) {
-    return 'isolated'
-  }
-  if (inputOverride) {
-    return 'override'
-  }
-  if (inputAlign) {
-    return 'align'
-  }
-  return 'default'
-}
+// const getUpdateMode = (
+//   inputIsolated: boolean,
+//   inputOverride: boolean,
+//   inputAlign: boolean,
+// ): nacl.RoutingMode => {
+//   if ([inputIsolated, inputOverride, inputAlign].filter(i => i).length > 1) {
+//     throw new Error('Can only provide one fetch mode flag.')
+//   }
+//   if (inputIsolated) {
+//     return 'isolated'
+//   }
+//   if (inputOverride) {
+//     return 'override'
+//   }
+//   if (inputAlign) {
+//     return 'align'
+//   }
+//   return 'default'
+// }
 
-export const fetchModeFilter: FetchModeFilter = {
-  transformParser(parser: yargs.Argv): yargs.Argv<FetchModeArgs> {
-    return parser
-      .options({
-        isolated: {
-          alias: ['t'],
-          describe: 'Restrict changes from modifying common configuration '
-                  + '(might result in changes in other env folders)',
-          boolean: true,
-          default: false,
-          demandOption: false,
-        },
-        align: {
-          alias: ['a'],
-          describe: 'Align the current environment with the current common configuration by '
-                + 'ignoring changes to the common folder',
-          boolean: true,
-          default: false,
-          demandOption: false,
-        },
-        override: {
-          alias: ['o'],
-          describe: 'Add new values to the common folder directly.',
-          boolean: true,
-          default: false,
-          demandOption: false,
-        },
-      }) as yargs.Argv<FetchModeArgs>
-  },
+// export const fetchModeFilter: FetchModeFilter = {
+//   transformParser(parser: yargs.Argv): yargs.Argv<FetchModeArgs> {
+//     return parser
+//       .options({
+//         isolated: {
+//           alias: ['t'],
+//           describe: 'Restrict changes from modifying common configuration '
+//                   + '(might result in changes in other env folders)',
+//           boolean: true,
+//           default: false,
+//           demandOption: false,
+//         },
+//         align: {
+//           alias: ['a'],
+//           describe: 'Align the current environment with the current common configuration by '
+//                 + 'ignoring changes to the common folder',
+//           boolean: true,
+//           default: false,
+//           demandOption: false,
+//         },
+//         override: {
+//           alias: ['o'],
+//           describe: 'Add new values to the common folder directly.',
+//           boolean: true,
+//           default: false,
+//           demandOption: false,
+//         },
+//       }) as yargs.Argv<FetchModeArgs>
+//   },
 
-  async transformParsedCliInput(
-    input: ParsedCliInput<FetchModeArgs>
-  ): Promise<ParsedCliInput<FetchModeArgs>> {
-    input.args.mode = getUpdateMode(input.args.isolated, input.args.override, input.args.align)
-    return input
-  },
-}
+//   async transformParsedCliInput(
+//     input: ParsedCliInput<FetchModeArgs>
+//   ): Promise<ParsedCliInput<FetchModeArgs>> {
+//     input.args.mode = getUpdateMode(input.args.isolated, input.args.override, input.args.align)
+//     return input
+//   },
+// }

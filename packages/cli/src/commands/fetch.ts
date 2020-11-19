@@ -21,10 +21,9 @@ import { Workspace, nacl, StateRecency } from '@salto-io/workspace'
 import { promises } from '@salto-io/lowerdash'
 import { EventEmitter } from 'pietile-eventemitter'
 import { logger } from '@salto-io/logging'
-import { FetchModeArgs } from '../filters/fetch_mode'
 import { progressOutputer, outputLine, errorOutputLine } from '../outputer'
 // import { environmentFilter } from '../filters/env'
-// import { createCommandBuilder } from '../command_builder'
+import { OptionType, createCommandDef } from '../command_builder'
 import {
   CliCommand, CliOutput,
   CliExitCode, SpinnerCreator, CliTelemetry, CommanderArgs,
@@ -44,6 +43,7 @@ import {
 import Prompts from '../prompts'
 // import { ServicesArgs } from '../filters/service'
 import { getCliTelemetry } from '../telemetry'
+import { FetchModeArgs, getUpdateMode, fetchModeOptions, } from './commons/fetch_mode'
 // import { EnvironmentArgs } from './env'
 
 const log = logger(module)
@@ -300,47 +300,73 @@ type FetchArgs = {
   force: boolean
   interactive: boolean
   stateOnly: boolean
-  // TODO: Remove this
   services: string[]
   env: string
-} & FetchModeArgs 
-// & ServicesArgs & EnvironmentArgs
-type FetchParsedCliInput = CommanderArgs<FetchArgs>
+} & FetchModeArgs
 
-const fetchBuilder = {
-  options: {
+const fetchDef = createCommandDef({
+  properties: {
     name: 'fetch',
     description: 'Syncs this workspace with the services\' current state',
-    options: {
-      force: {
+    options: [
+      {
         name: 'force',
         alias: 'f',
+        required: false,
         description: 'Accept all incoming changes, even if there\'s a conflict with local changes',
+        type: OptionType.boolean,
       },
-      interactive: {
+      {
         name: 'interactive',
         alias: 'i',
+        required: false,
         description: 'Interactively approve every incoming change',
+        type: OptionType.boolean,
       },
-      'state-only': {
-        name: 'state-only',
+      {
+        name: 'stateOnly',
         alias: 'st',
+        required: false,
         description: 'Fetch remote changes to the state file without mofifying the NaCL files.',
+        type: OptionType.boolean,
       },
-    }
+      {
+        name: 'services',
+        alias: 's',
+        required: false,
+        description: 'Specific services to perform this action for (default=all)',
+        type: OptionType.stringsList,
+      },
+      {
+        name: 'env',
+        alias: 'e',
+        required: false,
+        description: 'The name of the environment to use',
+        type: OptionType.string,
+      },
+      ...fetchModeOptions,
+    ],
+    positionals: [
+      {
+        name: 'mode',
+        required: false,
+        list: true
+      }
+    ]
   },
 
-  async build(input: FetchParsedCliInput, _output: CliOutput, _spinnerCreator: SpinnerCreator) {
+  async build(input: CommanderArgs<FetchArgs>) {
+    const mode = getUpdateMode(input.isolated, input.override, input.align)
     return command(
       '.',
       input.force,
       input.interactive,
-      input.mode,
+      mode,
       input.services,
       input.env,
       input.stateOnly,
     )
   },
-}
+})
 
-export default fetchBuilder
+export default fetchDef

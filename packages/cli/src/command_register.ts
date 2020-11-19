@@ -15,53 +15,93 @@
 */
 import _ from 'lodash'
 import commander from 'commander'
-import { promises } from '@salto-io/lowerdash'
+import { promises, collections } from '@salto-io/lowerdash'
 import builders from './commands/index'
-import { PositionalOption, CommandOrGroupDef, isCommand, CommandDef, CommandsGroupDef } from './command_builder'
-import { makeArray } from '@salto-io/lowerdash/dist/src/collections/array'
+import { PositionalOption, CommandOrGroupDef, isCommand, CommandDef, CommandsGroupDef, OptionType } from './command_builder'
 import { CliCommand } from './types'
 
+const { makeArray } = collections.array
 const { promiseWithState } = promises.state
 
-const createOptionString = (name: string, alias?: string): string =>
-  alias === undefined ? name : `-${alias}, --${name}`
+const LIST_SUFFIX = '...'
 
-const commandStr = (name: string, positionals?: PositionalOption[]): string =>
-  (`${name} ${makeArray(positionals).map(positional => positional.required ? `<${positional.name}>` : `[${positional.name}]`).join(' ')}`)
+const wrapWithRequired = (innerStr: string): string =>
+  (`<${innerStr}>`)
+
+const wrapWithOptional = (innerStr: string): string =>
+  (`[${innerStr}]`)
+
+const createOptionString = (name: string, type: OptionType, alias?: string): string => {
+  const aliasAndName = alias ? `-${alias}, --${name}` : `--${name}`
+  const varDef = (type === OptionType.boolean)
+    ? ''
+    // Keyed string/stringList options are always wrapped with <> because [] is a way to define it can also be a boolean
+    : (wrapWithRequired(type === OptionType.stringsList ? `${name}${LIST_SUFFIX}` : `${name}`))
+  return `${aliasAndName} ${varDef}`
+}
+
+const positionalsStr = (positionals: PositionalOption[]): string => {
+  return positionals.map(positional => {
+    const innerStr = positional.list ? `${positional.name}${LIST_SUFFIX}` : positional.name
+    return positional.required ? wrapWithRequired(`${innerStr}`) : wrapWithOptional(`${innerStr}`)
+  }).join(' ')
+}
+
+const addOption = (
+  command: commander.Command,
+  optionStr: string,
+  required: boolean,
+  description?: string,
+  defaultVal?: boolean | string
+): void => {
+  if (required) {
+    command.requiredOption(optionStr, description, defaultVal)
+  } else {
+    command.option(optionStr, description, defaultVal)
+  }
+}
+
+const createPositionalsMapping = (
+  positionals: PositionalOption[],
+  values: (string | string[] | undefined)[]
+): Record<string, string | string[] | undefined> => {
+  const positionalsNames = positionals.map(p => p.name)
+  return Object.fromEntries(
+    _.zip(positionalsNames, values)
+  )
+}
 
 // TODO: Handle aliases + requiredOptions + types of options
-const registerCommand = (
+const registerCommand = <T>(
   resolved: (val: CliCommand | PromiseLike<CliCommand> | undefined) => void,
   parentCommand: commander.Command,
-  commandDef: CommandDef
+  commandDef: CommandDef<T>
 ): void => {
-  const { options, build } = commandDef
+  const { properties, build } = commandDef
+  const positionals = properties.positionals ?? []
   const command = new commander.Command()
     .passCommandToAction(false)
-    .command(commandStr(options.name, makeArray(Object.values(options.positionals ?? {}))))
-  command
-    .description(options.description)
-  makeArray(Object.values(options?.positionals ?? {})).forEach(positional => {
-    if (positional.required) {
-      command
-        .requiredOption(positional.name, positional.description, positional.default)
-    } else {
-      command
-        .option(positional.name, positional.description, positional.default)
-    }
+    .command(`${properties.name} ${positionalsStr(positionals)}`)
+  command.description(properties.description)
+  makeArray(positionals).forEach(positional => {
+    // Positionals are added as non-required Options because for positionals
+    // requireness derives from <> or [] in the command and not option definition
+    addOption(command, positional.name, false, positional.description, positional.default)
   })
-  makeArray(Object.values(options?.options ?? {})).forEach(option => {
-    command
-      .option(createOptionString(option.name, option.alias), option.description, option.default)
+  makeArray(properties.options ?? []).forEach(option => {
+    const optionDefStr = createOptionString(option.name, option.type, option.alias)
+    addOption(command, optionDefStr, option.required, option.description, option.default)
   })
   command.action(
     (...options) => {
     console.log('%o', options)
-    // TODO: Add the positionals
-    const a = {
-      ...options.pop(),
+    const indexOfKeyedOptions = options.findIndex(o => _.isPlainObject(o))
+    const positionalValues = options.slice(0, indexOfKeyedOptions)
+    const args = {
+      ...options[indexOfKeyedOptions],
+      ...createPositionalsMapping(positionals, positionalValues)
     }
-    return resolved(build(a))
+    return resolved(build(args))
   })
   parentCommand.addCommand(command)
 }
@@ -71,10 +111,9 @@ const registerGroup = (
   parentCommand: commander.Command,
   containerDef: CommandsGroupDef
 ): void => {
-  const { options, subCommands } = containerDef
+  const { properties: options, subCommands } = containerDef
   const groupCommand = new commander.Command()
-    // TODO: Add the command names as positionals
-    .command(commandStr(options.name))
+    .command(`${options.name}`)
   subCommands.forEach(subCommand => {
     registerCommandOrGroup(resolved, groupCommand, subCommand)
   })

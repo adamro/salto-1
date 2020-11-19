@@ -69,9 +69,9 @@ export type CommanderArgs<TParsedArgs = {}> = TParsedArgs & {
   [key: string]: unknown
 }
 
-export interface ParsedCliInput<TParsedArgs = {}> extends Omit<CliInput, 'args'> {
-  args: CommanderArgs<TParsedArgs>
-}
+// export interface ParsedCliInput<TParsedArgs = {}> extends Omit<CliInput, 'args'> {
+//   args: CommanderArgs<TParsedArgs>
+// }
 
 export interface CliCommand {
   execute(

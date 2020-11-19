@@ -13,64 +13,66 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-// import commander from 'commander'
-import { ParsedCliInput, CliCommand } from './types'
-// import { Filter } from './filter'
+import { CommanderArgs, CliCommand } from './types'
 
-export type CommandBuilder<
-  TArgs = {},
-  TParsedCliInput extends ParsedCliInput<TArgs> = ParsedCliInput<TArgs>,
-  > =
-  // Create a CliCommand given a parsed CLI input (output of parser)
-  (input: TParsedCliInput) => Promise<CliCommand>
-
-export type CommandOrGroupDef = CommandsGroupDef | CommandDef
+export type CommandOrGroupDef = CommandsGroupDef | CommandDef<never>
 
 export interface CommandsGroupDef {
-  options: BasicCommandOptions
+  properties: BasicCommandProperties
   subCommands: CommandOrGroupDef[]
 }
 
-export interface CommandDef {
-  options: CommandOptions
+export type CommandDef<T> = {
+  properties: CommandOptions
   build: (
-    input: ParsedCliInput,
-  ) => Promise<CliCommand>, 
+    input: CommanderArgs<T>,
+  ) => Promise<CliCommand>
 }
 
-export const isCommand = (c: any): c is CommandDef =>
-  (c !== undefined && c.build !== undefined)
+export const isCommand = (c: CommandOrGroupDef): c is CommandDef<never> =>
+  (c !== undefined && Object.keys(c).includes('build'))
 
-export interface BasicCommandOptions {
+export interface BasicCommandProperties {
   name: string
   description: string
   aliases?: string[]
 }
 
-export interface CommandOptions extends BasicCommandOptions {
-  options?: KeyedOptions
-  positionals?: PositionalOptions
+export interface CommandOptions extends BasicCommandProperties {
+  options?: KeyedOption[]
+  positionals?: PositionalOption[]
 }
 
-export interface PositionalOption {
+export enum OptionType {
+  boolean,
+  string,
+  stringsList,
+}
+
+export type PositionalOption = {
   name: string
-  required?: boolean
-  array?: boolean
+  required: boolean
+  description?: string
+  list?: true
+  default?: string
+}
+
+export type KeyedOption = {
+  name: string
+  required: boolean
   description?: string
   alias?: string
-  default?: string | boolean
-}
+} & ({
+  type: OptionType.boolean
+  default?: boolean
+} | { 
+  type: OptionType.string
+  default?: string
+} | { 
+  type: OptionType.stringsList
+  default?: string // TODO: Check this
+})
 
-export interface PositionalOptions { [key: string]: PositionalOption }
-
-export interface KeyedOption {
-  name: string
-  alias?: string
-  description?: string
-  boolean?: boolean
-  required?: boolean
-  default?: string | boolean
-}
-
-export interface KeyedOptions { [key: string]: KeyedOption }
+export const createCommandDef = <T>(def: CommandDef<T>): CommandDef<T> => def
+export const createCommandGroupDef = (def: CommandsGroupDef): CommandsGroupDef => def
 
