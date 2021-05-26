@@ -75,7 +75,6 @@ const applyLocalChangesToWorkspace = async (
   cliTelemetry.changesToApply(changesToApply.length, workspaceTags)
   log.debug(`Applying ${changesToApply.length} semantic changes to the local workspace`)
 
-  outputLine(EOL, output)
   outputLine(
     formatStepStart(Prompts.APPLYING_CHANGES),
     output,
@@ -142,7 +141,7 @@ export const action: WorkspaceCommandAction<RestoreArgs> = async ({
     await printRestorePlan(changes, detailedPlan, output)
   }
 
-  outputLine(formatStepStart(Prompts.RESTORE_CALC_DIFF_FINISH), output)
+  outputLine(formatStepCompleted(Prompts.RESTORE_CALC_DIFF_FINISH), output)
   outputLine(EOL, output)
 
   if (dryRun) {
