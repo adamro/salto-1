@@ -26,7 +26,10 @@ import {
 } from '@salto-io/adapter-api'
 import { applyInstancesDefaults, resolvePath, flattenElementStr, buildElementsSourceFromElements, safeJsonStringify, walkOnElement, WalkOnFunc, WALK_NEXT_STEP, setPath, walkOnValue } from '@salto-io/adapter-utils'
 import { logger } from '@salto-io/logging'
-import { merger, elementSource, expressions, Workspace, pathIndex, updateElementsWithAlternativeAccount, createAdapterReplacedID, remoteMap } from '@salto-io/workspace'
+import { merger, elementSource, expressions, Workspace,
+  pathIndex,
+  updateElementsWithAlternativeAccount, createAdapterReplacedID,
+  remoteMap } from '@salto-io/workspace'
 import { collections, promises, types, values } from '@salto-io/lowerdash'
 import { StepEvents } from './deploy'
 import { getPlan, Plan } from './plan'
@@ -635,9 +638,17 @@ type CreateFetchChangesParams = {
   progressEmitter?: EventEmitter<FetchProgressEvents>
 }
 const createFetchChanges = async ({
-  adapterNames, workspaceElements, stateElements, unmergedElements,
-  processErrorsResult, currentConfigs, getChangesEmitter, partiallyFetchedAccounts = new Set(),
-  updatedConfigs = [], errors = [], progressEmitter,
+  adapterNames,
+  workspaceElements,
+  stateElements,
+  unmergedElements,
+  processErrorsResult,
+  currentConfigs,
+  getChangesEmitter,
+  partiallyFetchedAccounts = new Set(),
+  updatedConfigs = [],
+  errors = [],
+  progressEmitter,
 }: CreateFetchChangesParams
 ): Promise<FetchChangesResult> => {
   const calculateDiffEmitter = new StepEmitter()
@@ -917,36 +928,59 @@ export const fetchChangesFromWorkspace = async (
   const fullElements = await awu(await (otherElementsSource).getAll())
     .filter(elem => fetchAccounts.includes(elem.elemID.adapter))
     .toArray()
-
-  const otherPathIndex = await otherWorkspace.state(env).getPathIndex()
-  const inMemoryOtherPathIndex = new remoteMap.InMemoryRemoteMap<pathIndex.Path[]>(
-    await awu(otherPathIndex.entries()).toArray(),
-  )
-  const splitByPathIndex = (await withLimitedConcurrency(wu(fullElements).map(
-    elem => () => pathIndex.splitElementByPath(elem, inMemoryOtherPathIndex)
-  ), MAX_SPLIT_CONCURRENCY)).flat()
-  const [unmergedWithPath, unmergedWithoutPath] = _.partition(
-    splitByPathIndex,
-    elem => values.isDefined(elem.path)
-  )
-  const unmergedElements = [
-    ...unmergedWithPath,
-    ...(await withLimitedConcurrency(
-      wu(unmergedWithoutPath).map(elem => () => splitElementByFile(elem)),
-      MAX_SPLIT_CONCURRENCY
+  const haveElementsWithNoPath = fullElements.find(element => element.path === undefined)
+  let unmergedElements: Element[]
+  if (haveElementsWithNoPath) {
+    const otherPathIndex = await otherWorkspace.state(env).getPathIndex()
+    const [withPath, withoutPath] = _.partition(
+      fullElements,
+      elem => elem.path !== undefined,
     )
-    ).flat(),
-  ]
+    const withoutPathElemIDs = withoutPath.map(e => e.elemID.getFullName())
+    const inMemoryRelevantOtherPathIndex = new remoteMap.InMemoryRemoteMap<pathIndex.Path[]>(
+      await awu(otherPathIndex.entries({
+        filter: key => (withoutPathElemIDs.some(elemID => key.startsWith(elemID))),
+      })).toArray(),
+    )
+    const splitByPathIndex = (await withLimitedConcurrency(wu(withoutPath).map(
+      elem => () => pathIndex.splitElementByPath(elem, inMemoryRelevantOtherPathIndex)
+    ), MAX_SPLIT_CONCURRENCY)).flat()
+    const [unmergedWithPath, unmergedWithoutPath] = _.partition(
+      splitByPathIndex,
+      elem => values.isDefined(elem.path)
+    )
+    unmergedElements = withPath
+      .concat(unmergedWithPath)
+      .concat(
+        (await withLimitedConcurrency(
+          wu(unmergedWithoutPath).map(elem => () => splitElementByFile(elem)),
+          MAX_SPLIT_CONCURRENCY
+        )).flat()
+      )
+    // [
+    //   ...withPath,
+    //   ...unmergedWithPath,
+    //   ...(await withLimitedConcurrency(
+    //     wu(unmergedWithoutPath).map(elem => () => splitElementByFile(elem)),
+    //     MAX_SPLIT_CONCURRENCY
+    //   )).flat(),
+    // ]
+  } else {
+    unmergedElements = fullElements
+  }
+
   const fetchChangesResult = await createFetchChanges({
     adapterNames: fetchAccounts,
     currentConfigs,
     getChangesEmitter,
     processErrorsResult: {
-      keptElements: fullElements,
+      keptElements: unmergedElements,
+      // keptElements: fullElements,
       errorsWithDroppedElements: [],
     },
     stateElements,
     workspaceElements,
+    // unmergedElements: fullElements,
     unmergedElements,
   })
   // We currently cannot access the content of static files from the state so when fetching
