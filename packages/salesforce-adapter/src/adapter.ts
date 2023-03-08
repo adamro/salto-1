@@ -407,6 +407,10 @@ export default class SalesforceAdapter implements AdapterOperations {
       configChangeSuggestions,
       this.userConfig,
     )
+    if (updatedConfig !== undefined) {
+      log.info(`Salesforce config changes message -
+      ${updatedConfig.message}`)
+    }
     return {
       elements,
       errors: onFetchFilterResult.errors ?? [],
